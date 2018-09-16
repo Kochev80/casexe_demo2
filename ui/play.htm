@@ -1,0 +1,75 @@
+<h1>Розыгрыш призов</h1>
+<div id="container_play">
+
+    <!-- Блок авторизации, изначально скрыт, появляется если запрос состояния через API вернет user_id<1 -->
+    <div id="container_login">
+        <div class="horizontal_form_part">
+            <div class="form_hint">Логин:</div>
+            <input type="text" name="login" id="login" value="" class="graybox middle">
+        </div>
+        <div class="horizontal_form_part">
+            <div class="form_hint">Пароль:</div>
+            <input type="password" name="pass" id="pass" value="" class="graybox middle">
+        </div>
+        <div class="horizontal_form_part">
+            <div class="form_hint">&nbsp;</div>
+            <input type="button" onclick="sendLoginForm()" value="Вход" class="graybox small">
+        </div>
+    </div>
+
+    <!-- Универсальное окошко для сообщений об ошибках, сюда попадает содержимое поля "message" из запросов к API -->
+    <div id="container_message">
+        <span id="message_txt"></span>
+        <img src="ui/images/cross.png" alt="Закрыть" id="close_message" onclick="closeMessage()">
+    </div>
+
+    <!-- Информация по залогиненному пользователю -->
+    <div id="container_user">
+        Добро пожаловать <b><span id="user_name">username</span></b>!<br>
+        У вас есть <b><span id="user_bonus">0</span></b> бонусов!
+        <input type="button" class="graybox small float_right" value="Выход" onclick="sendLogoutForm()">
+    </div>
+
+    <!-- Барабан для розыгрыша -->
+    <div id="container_baraban">
+        <div id="card_0" class="item_card"><div id="card_text_0" class="item_card_text">...</div></div>
+        <div id="card_1" class="item_card"><div id="card_text_1" class="item_card_text">...</div></div>
+        <div id="card_2" class="item_card"><div id="card_text_2" class="item_card_text">...</div></div>
+        <div id="card_3" class="item_card"><div id="card_text_3" class="item_card_text">...</div></div>
+        <div id="card_4" class="item_card"><div id="card_text_4" class="item_card_text">...</div></div>
+        <div id="card_5" class="item_card"><div id="card_text_5" class="item_card_text">...</div></div>
+        <div id="card_6" class="item_card"><div id="card_text_6" class="item_card_text">...</div></div>
+        <div id="card_7" class="item_card"><div id="card_text_7" class="item_card_text">...</div></div>
+        <div id="card_8" class="item_card"><div id="card_text_8" class="item_card_text">...</div></div>
+        <div id="card_9" class="item_card"><div id="card_text_9" class="item_card_text">...</div></div>
+        <img id="white_mask" src="ui/images/mask.png">
+        <input type="button" class="graybox roller" value="Крутить!" onclick="getPrize()">
+    </div>
+
+    <!-- Сообщение о выигрыше -->
+    <div id="container_win_message">
+        <span id="win_message_txt"></span>
+        <input type="button" class="graybox small float_right" value="Да!" onclick="refreshGame()">
+    </div>
+
+    <!-- Конвертация денег в бонусы -->
+    <div id="container_money2bonus">
+        <div id="card_A" class="item_card_static"><div id="card_text_A" class="item_card_text">...</div></div>
+        <div class="big_text" id="text_A"></div>
+        <input type="button" class="graybox big float_right" value="В бонусы!" onclick="moveMoney2bonus()">
+        <div class="float_right">&nbsp;</div>
+        <input type="button" class="graybox big float_right" value="На карту!" onclick="moveMoney2card()">
+    </div>
+
+    <!-- Конвертация предметов в деньги -->
+    <div id="container_item2money">
+        <div id="card_B" class="item_card_static"><div id="card_text_B" class="item_card_text">...</div></div>
+        <div class="big_text" id="text_B"></div>
+        <input type="button" class="graybox big float_right" value="На деньги!" onclick="moveItem2money()">
+        <div class="float_right">&nbsp;</div>
+        <input type="button" class="graybox big float_right" value="Отправьте!" onclick="moveItem2post()">
+        <input type="hidden" name="id_item" id="id_item" value="">
+    </div>
+
+
+</div>
