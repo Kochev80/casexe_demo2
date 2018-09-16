@@ -12,3 +12,5 @@ $f3->route('POST /api/money2card',  'Play::moveMoneyToCard');   // Помети�
 $f3->route('POST /api/money2bonus', 'Play::moveMoneyToBonus');  // Перевести деньги в бонусы
 $f3->route('POST /api/item2post',   'Play::moveItemToPost');    // Пометить предмет к отправке
 $f3->route('POST /api/item2money',  'Play::moveItemToMoney');   // Продать предмет
+
+$f3->route('GET /send_money',       'Admin::sendMoney');        // Перевести деньги на карты

@@ -1,0 +1,1 @@
+php index.php send_money --limit=50
