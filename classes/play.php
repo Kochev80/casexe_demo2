@@ -44,18 +44,19 @@ class Play {
     // Поменять предмет на деньги
     public static function moveItemToMoney($f3) {
         if ($f3->exists('SESSION.user_id') && $f3->get('SESSION.user_id')>0 && $f3->exists('POST.id')) {
+            // Запрос стоимости предмета и его ID для таблицы Items
             $rows=$f3->get('db')->exec(
                 'select i.cost,i.id from delivery as d inner join items as i on d.id_item=i.id where d.id_user=:id_user and d.id=:id',
                 array(':id_user'=>$f3->get('SESSION.user_id'),':id'=>$f3->get('POST.id')));
-            $cost=$rows[0]['cost']*self::getParam($f3,'item2money');
+            $cost=$rows[0]['cost']*self::getParam($f3,'item2money'); // Учет коэффициента перевода предметов в деньги
             $id_item=$rows[0]['id'];
-            $f3->get('db')->exec(
+            $f3->get('db')->exec( // Добавление денег пользователю
                 'update users set money_win=money_win+:cost where id=:id_user',
                 array(':id_user'=>$f3->get('SESSION.user_id'),':cost'=>$cost));
-            $f3->get('db')->exec(
+            $f3->get('db')->exec( // Удаление предмета из списка доставки
                 'delete from delivery where id_user=:id_user and id=:id',
                 array(':id_user'=>$f3->get('SESSION.user_id'),':id'=>$f3->get('POST.id')));
-            $f3->get('db')->exec(
+            $f3->get('db')->exec( // Добавление предмета в общий пул розыгрыша
                 'update items set amount=amount+1 where id=:id_item',
                 array(':id_item'=>$id_item));
         }
@@ -64,33 +65,48 @@ class Play {
 
     // Возвращает текущую игровую ситуацию
     public static function getState($f3) {
+
+        $current_state=array( // Заполнение структуры значениями по-умолчанию
+            'user_id'=>0,
+            'user_name'=>'',
+            'money_win'=>0,      // Количество выигранных, но не отправленных денег.
+            'bonus'=>0,          // Количество бонусов
+            'money_win_txt'=>'', // Если money_win>0 то пользователю будет выведено окно с этим текстом
+            'item_win'=>array(), // Структура с одним выигранным предметом. Внутри id и name, если предмет есть.
+            'item_win_txt'=>'',  // Если есть item_win["id"], то это текст для окна пользователю.
+        );
+
         // Запрос информации о пользователе
         if ($f3->exists('SESSION.user_id')) {
             $rows=$user_info=($f3->get('db')->exec(
                 'select * from users where id=:id',
                 array(':id'=>$f3->get('SESSION.user_id'))));
-            $user_info=$rows[0];
+            if (count($rows)>0) {
+                $current_state['user_id']=$f3->get('SESSION.user_id');
+                $current_state['user_name']=$rows[0]['login'];
+                $current_state['bonus']=$rows[0]['bonus'];
+                $current_state['money_win']=$rows[0]['money_win'];
+                if ($current_state['money_win']>0) {
+                    $current_state['money_win_txt']='У вас есть $'.$current_state['money_win'].', вы можете вывести их на карту, либо поменять на '.round($current_state['money_win']*self::getParam($f3, 'money2bonus')).' бонусов.';
+                }
+            }
         }
+
         // Создание барабана для розыгрыша, если структура пустая
         if (!$f3->exists('SESSION.baraban')) $f3->set('SESSION.baraban',Play::buildBaraban($f3));
+        $current_state['baraban']=$f3->get('SESSION.baraban');
+
         // Поиск предметов, по которым необходимо решение (выдаются по одному)
         $rows=$f3->get('db')->exec(
-            'select d.id,i.id as id_item,i.name,i.cost from delivery as d inner join items as i on d.id_item=i.id where d.fl_accept=0 and d.id_user=:id',
+            'select d.id,i.id as id_item,i.name,i.cost from delivery as d inner join items as i on d.id_item=i.id where d.fl_accept=0 and d.id_user=:id limit 1',
             array(':id'=>$f3->get('SESSION.user_id')));
-        if (count($rows)>0) $item_win=$rows[0];
+        if (count($rows)>0) {
+            $current_state['item_win']=$rows[0];
+            $current_state['item_win_txt']='У вас есть '.$rows[0]['name'].', вы можете получить его по почте, либо поменять на $'.round($rows[0]['cost']*self::getParam($f3,'item2money')).'.';
+        }
+
         // Вывод структуры состояния игры
-        response::json(array(
-            'user_id'=>(int)($f3->get('SESSION.user_id')),  // ID пользователя, если не авторизован -- будет 0
-            'user_name'=>(isset($user_info['login'])?$user_info['login']:'??'),
-            'money_win'=>(isset($user_info['money_win'])?$user_info['money_win']:0),
-            'money_win_txt'=>(isset($user_info['money_win'])?
-                'У вас есть $'.$user_info['money_win'].', вы можете вывести их на карту, либо поменять на '.round($user_info['money_win']*self::getParam($f3,'money2bonus')).' бонусов.' :''),
-            'item_win'=>(isset($item_win)?$item_win:array()),
-            'item_win_txt'=>(isset($item_win)?
-                'У вас есть '.$item_win['name'].', вы можете получить его по почте, либо поменять на $'.round($item_win['cost']*self::getParam($f3,'item2money')).'.':''),
-            'bonus'=>(isset($user_info['bonus'])?$user_info['bonus']:0),
-            'baraban'=>$f3->get('SESSION.baraban')
-        ));
+        response::json($current_state);
     }
 
     // Получение приза, возвращает номер выигранного лота и текстовое сообщение
